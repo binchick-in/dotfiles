@@ -1,0 +1,110 @@
+#!/bin/bash
+# Author: binchick-in
+# Version 2.0 (2025-05-16)
+# Dependencies: tmux (duh), and https://github.com/binchick-in/rand-emoji
+# Description: A small tmux session and window manager.
+
+DEFAULT_SESSION_NAME="🥃"
+
+help() {
+    echo "Usage: tmux-env [COMMAND] [ARGUMENTS]"
+    echo ""
+    echo "Commands:"
+    echo "  new                Create a new tmux session with default windows"
+    echo "  ipy                Create a new iPython window in the default session"
+    echo "  repo [REPO NAME]   Create a new window for the specified repo"
+    echo ""
+    echo "Examples:"
+    echo "  tmux-env new"
+    echo "  tmux-env ipy"
+    echo "  tmux-env repo my-repo"
+}
+
+session_exists() {
+    tmux has-session -t "$DEFAULT_SESSION_NAME" 2>/dev/null
+}
+
+ipython_session() {
+    window_name="🐍 iPython $(rand-emoji)"
+
+    # Check that the session exists
+    if ! session_exists; then
+        default_new_session false
+    fi
+
+    # Create the new window and run ipython
+    tmux new-window -n "$window_name" -t "$DEFAULT_SESSION_NAME" -c "$HOME/playground" "/nail/home/bbennett/playground/venv/bin/ipython"
+    tmux select-window -t "$DEFAULT_SESSION_NAME":"$window_name"
+
+    # If not already inside a tmux client, attach to the session
+    if [ -z "$TMUX" ]; then
+        tmux attach -t "$DEFAULT_SESSION_NAME"
+    fi
+}
+
+new_repo_window() {
+    repo_name="$2"
+    window_name="$(rand-emoji) repos/$repo_name"
+
+    # Check that the session exists
+    if ! session_exists; then
+        default_new_session false
+    fi
+
+    # Check that the repo exists
+    if [ ! -d "$HOME/repos/$repo_name" ]; then
+        echo "☠️ Directory '$HOME/repos/$repo_name' does not exist."
+        exit 1
+    fi
+
+    tmux new-window -n "$window_name" -t "$DEFAULT_SESSION_NAME" -c "$HOME/repos/$repo_name"
+    tmux select-window -t "$DEFAULT_SESSION_NAME":"$window_name"
+
+    # If not already inside a tmux client, attach to the session
+    if [ -z "$TMUX" ]; then
+        tmux attach -t "$DEFAULT_SESSION_NAME"
+    fi
+}
+
+default_new_session() {
+    tmux_should_attach=$1
+
+    if session_exists; then
+        echo "☠️ Session '$DEFAULT_SESSION_NAME' already exists!"
+        exit 1
+    fi
+
+    tmux new-session -s "$DEFAULT_SESSION_NAME" -d -c "$HOME"
+
+    if [ $? -eq 0 ]; then
+        # Window setup
+        tmux rename-window -t "$DEFAULT_SESSION_NAME" "💻 GENERAL TERMINAL"
+
+        # Select the first window
+        tmux select-window -t "$DEFAULT_SESSION_NAME":"💻 GENERAL TERMINAL"
+
+        if [ "$tmux_should_attach" = true ]; then
+            tmux attach-session -t "$DEFAULT_SESSION_NAME"
+        fi
+    fi
+
+}
+
+
+if [[ "$1" == "ipy" ]]; then
+    ipython_session $1
+elif [[ "$1" == "repo" ]]; then
+
+    if [ -z "$2" ]; then
+        echo "☠️ repo name argument required."
+        echo "Usage: tmux-env repo [REPO NAME]"
+        exit 1
+    fi
+    new_repo_window $@
+elif [[ "$1" == "new" ]]; then
+    default_new_session true
+elif [[ "$1" == "help" ]]; then
+    help
+else
+    help
+fi
