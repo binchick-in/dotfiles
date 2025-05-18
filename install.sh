@@ -10,6 +10,12 @@ install_tmux() {
     echo "Installed: ~/.tmux.conf"
 }
 
+install_vim() {
+    cp .vimrc ~/
+    cp -r .vim/ ~/
+    echo "Installed: ~/.vimrc"
+    echo "Installed: ~/.vim/"
+}
 
 ensure_directories() {
     for dir in repos worktrees playground inbound; do
@@ -26,6 +32,7 @@ main() {
     ensure_directories
     install_bins
     install_tmux
+    install_vim
 }
 
 main
