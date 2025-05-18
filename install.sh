@@ -17,6 +17,11 @@ install_vim() {
     echo "Installed: ~/.vim/"
 }
 
+install_gitconfig() {
+    cp .gitconfig ~/
+    echo "Installed: ~/.gitconfig"
+}
+
 ensure_directories() {
     for dir in repos worktrees playground inbound; do
         if [ ! -d ~/"$dir" ]; then
@@ -33,6 +38,7 @@ main() {
     install_bins
     install_tmux
     install_vim
+    install_gitconfig
 }
 
 main
